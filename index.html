@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>向火独行 · ALONE AGAINST THE FLAMES</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@400;600;900&family=Cinzel:wght@500;700&display=swap" rel="stylesheet" media="print" onload="this.media='all'">
+<noscript><link href="https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@400;600;900&family=Cinzel:wght@500;700&display=swap" rel="stylesheet"></noscript>
+<link rel="stylesheet" href="css/style.css?v=5">
+</head>
+<body>
+
+<canvas id="embers"></canvas>
+<div class="vignette"></div>
+
+<!-- ═══════════ 标题屏 ═══════════ -->
+<section id="screen-title" class="screen">
+  <div class="title-bg"></div>
+  <div class="title-inner">
+    <div class="title-sub-en">A&nbsp;L&nbsp;O&nbsp;N&nbsp;E&nbsp;&nbsp;A&nbsp;G&nbsp;A&nbsp;I&nbsp;N&nbsp;S&nbsp;T&nbsp;&nbsp;T&nbsp;H&nbsp;E&nbsp;&nbsp;F&nbsp;L&nbsp;A&nbsp;M&nbsp;E&nbsp;S</div>
+    <h1 class="game-title" data-text="向火独行">向火独行</h1>
+    <div class="title-rule"><i>✦</i></div>
+    <p class="title-flavor">只需要找一把舒适的椅子，坐在轰鸣的炉火旁。</p>
+    <p class="title-flavor">然后读下去，按照说明行事。</p>
+    <p class="title-flavor em">……仔细想来，还是不要离火源太近为妙。</p>
+    <div class="title-actions">
+      <button id="btn-start" class="title-btn">开 始 冒 险</button>
+      <button id="btn-continue" class="title-btn ghost" style="display:none">继 续 冒 险</button>
+      <button id="btn-import" class="title-btn ghost">导 入 角 色</button>
+    </div>
+    <div class="title-credit">
+      《克苏鲁的呼唤》第七版 · 单人冒险 · 设定于 1927 年新英格兰<br>
+      原作：加文·英格利斯 / Chaosium　·　汉化：七宫涟（纯美苹果园）<br>
+      本网页为该模组的个人电子化改编
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════ 游戏屏 ═══════════ -->
+<section id="screen-game" class="screen">
+  <header id="topbar">
+    <div class="brand">向火独行</div>
+    <div class="vitals">
+      <div class="chip" id="chip-hp" title="生命值"><label>生命</label><span class="chip-num">0</span><span class="chip-bar"><i></i></span></div>
+      <div class="chip" id="chip-san" title="理智值"><label>理智</label><span class="chip-num">0</span><span class="chip-bar"><i></i></span></div>
+      <div class="chip" id="chip-luck" title="幸运值"><label>幸运</label><span class="chip-num">0</span></div>
+      <div class="chip" id="chip-mp" title="魔法值"><label>魔法</label><span class="chip-num">0</span></div>
+    </div>
+    <div class="tools">
+      <button id="btn-back" title="回到上一页（Alt+←）">上一页</button>
+      <button id="btn-history" title="查看历程">历程</button>
+      <button id="btn-map" title="查看地图">地图</button>
+      <button id="btn-sheet" title="调查员角色卡">角色卡</button>
+      <button id="btn-mute" title="音效开关">♪</button>
+      <button id="btn-restart" title="重新开始">↺</button>
+    </div>
+  </header>
+  <main id="story">
+    <article id="entry-card">
+      <div id="entry-no"></div>
+      <figure id="entry-img"></figure>
+      <div id="entry-text"></div>
+      <div id="fx-area"></div>
+      <div id="choices"></div>
+    </article>
+  </main>
+</section>
+
+<!-- ═══════════ 结局屏 ═══════════ -->
+<section id="screen-ending" class="screen">
+  <div class="ending-wrap">
+    <div class="ending-card"></div>
+    <div id="ending-flavor"></div>
+  </div>
+</section>
+
+<!-- ═══════════ 角色卡抽屉 ═══════════ -->
+<aside id="sheet">
+  <div class="sheet-head">调 查 员<button class="sheet-close">✕</button></div>
+  <div class="sheet-body"></div>
+</aside>
+
+<!-- ═══════════ 历程抽屉 ═══════════ -->
+<aside id="history">
+  <div class="sheet-head">历 程<button class="sheet-close">✕</button></div>
+  <div class="history-body"></div>
+</aside>
+
+<!-- 地图遮罩 -->
+<div id="map-overlay">
+  <div class="map-box">
+    <img src="assets/img/map.png" alt="烬头村地图">
+    <div class="map-cap">烬头村与周边 · 点击任意处关闭</div>
+  </div>
+</div>
+
+<!-- ═══════════ 通用弹窗（导出/导入角色码） ═══════════ -->
+<div id="modal">
+  <div class="modal-box">
+    <div class="modal-title"></div>
+    <div class="modal-body"></div>
+    <div class="modal-actions"></div>
+  </div>
+</div>
+
+<div id="toasts"></div>
+
+<script src="js/data1.js?v=5"></script>
+<script src="js/data2.js?v=5"></script>
+<script src="js/data3.js?v=5"></script>
+<script src="js/data4.js?v=5"></script>
+<script src="js/dice.js?v=5"></script>
+<script src="js/combat.js?v=5"></script>
+<script src="js/engine.js?v=5"></script>
+</body>
+</html>
