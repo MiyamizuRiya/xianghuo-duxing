@@ -352,10 +352,10 @@ async function scenario_creation() {
   DD.customTotal = 11;
   await click('投掷幸运值');
   assert(state().luck === 55, '幸运=11×5=55，实际 ' + state().luck);
-  await tick(50);
-  // 敏捷检定（骰子桩：通过）
+  // 敏捷检定按钮（先读正文，再主动掷骰）
   DD.checkResult = { passed: true, level: 'success', roll: 11 };
-  await tick(100);
+  await click('「敏捷」检定');
+  await tick(80);
   assert(entryNo() === '261', '敏捷通过应到261，当前 ' + entryNo());
 
   // 261 → 71
@@ -419,8 +419,9 @@ async function scenario_day1() {
   await click('询问有关节日的事');
   assert(entryNo() === '21', '21');
   await click('和梅多聊聊天');
-  // 取悦检定：失败 → 51
+  // 取悦检定按钮：失败 → 51
   DD.checkResult = { passed: false, level: 'fail', roll: 77 };
+  await click('「取悦」检定');
   await tick(60);
   assert(entryNo() === '51', '取悦失败应到51，当前 ' + entryNo());
   await click('继续');
@@ -503,6 +504,7 @@ async function scenario_checksAndLoss() {
   DD.checkQueue = [{ passed: false, level: 'fail', roll: 66 }];
   await windowStub.AAF.goTo(11);
   await click('检查布告板');
+  await click('「侦查」检定');
   await tick(80);
   assert(entryNo() === '37', '侦查失败应到37，当前 ' + entryNo());
   await click('继续');
@@ -521,6 +523,8 @@ async function scenario_checksAndLoss() {
     { passed: false, level: 'fail', roll: 55 }
   ];
   await click('继续');
+  await click('「信用评级」检定');
+  await click('「侦查」检定');
   await tick(120);
   assert(entryNo() === '124', '信用通过+侦查失败应到124，当前 ' + entryNo());
   await click('继续');
@@ -545,8 +549,11 @@ async function scenario_lossPanels() {
   await click('尝试「急救」检定');
   assert(state().hp === hpBefore - 1, '急救成功应+1');
   assert(state().ticks['急救'] === true, '急救应打勾');
+  await tick(40);
+  assert(entryNo() === '79', '急救后应到79');
+  await click('「聆听」检定');
   await tick(80);
-  assert(entryNo() === '234', '随后79的聆听检定失败应到234，当前 ' + entryNo());
+  assert(entryNo() === '234', '79的聆听检定失败应到234，当前 ' + entryNo());
   console.log('✓ 伤害/回复面板');
 }
 
@@ -556,12 +563,14 @@ async function scenario_push() {
     { passed: false, level: 'fail', roll: 70 }
   ];
   await windowStub.AAF.goTo(165);
-  await tick(60);
+  await click('「图书馆使用」检定');
+  await tick(40);
   await click('孤注一掷');
   await tick(60);
   assert(entryNo() === '190', '孤注一掷失败应到190，当前 ' + entryNo());
   DD.checkQueue = [{ passed: false, level: 'fumble', roll: 100 }];
   await windowStub.AAF.goTo(165);
+  await click('「图书馆使用」检定');
   await tick(60);
   assert(entryNo() === '184', '首掷大失败应到184，当前 ' + entryNo());
   state().flags.lastFumble = true;
@@ -586,6 +595,9 @@ async function scenario_combats() {
   assert(entryNo() === '201', '熊战3轮存活应到201，当前 ' + entryNo());
   DD.checkQueue = [{ passed: false, level: 'fail', roll: 77 }];
   await click('不做处理');
+  await tick(40);
+  assert(entryNo() === '79', '不做处理后应到79');
+  await click('「聆听」检定');
   await tick(80);
   assert(entryNo() === '234', '201后79的聆听失败应到234，当前 ' + entryNo());
 
@@ -626,6 +638,9 @@ async function scenario_secretsAndSpells() {
   assert(entryNo() === '107', '107');
   DD.checkQueue = [{ passed: false, level: 'fail', roll: 88 }];
   await click('继续');
+  await tick(40);
+  assert(entryNo() === '152', '阶梯下来应到152');
+  await click('「潜行」检定');
   await tick(80);
   assert(entryNo() === '216', '152的潜行失败应到216，当前 ' + entryNo());
 
@@ -634,6 +649,9 @@ async function scenario_secretsAndSpells() {
   assert(opts.some(t => t.includes('隐蔽阶梯')), '87应有阶梯选项');
   DD.checkQueue = [{ passed: false, level: 'fail', roll: 66 }];
   await click('查看崖壁上的隐蔽阶梯');
+  await tick(40);
+  assert(entryNo() === '187', '应到187');
+  await click('「侦查」检定');
   await tick(80);
   assert(entryNo() === '160', '187的侦查失败应到160，当前 ' + entryNo());
 
@@ -649,9 +667,12 @@ async function scenario_secretsAndSpells() {
   range.fire('input');
   DD.checkQueue = [{ passed: true, level: 'success', roll: 30 }];
   await click('诵读咒文');
-  await tick(80);
+  await tick(40);
   assert(state().mp === mpBefore - 6, '魔法值应-6');
   assert(state().lastSpend === 6, 'lastSpend=6');
+  assert(entryNo() === '198', '应到198施法条目');
+  await click('「号令群星」施法检定');
+  await tick(80);
   assert(entryNo() === '209', '施法成功应到209，当前 ' + entryNo());
   DD.damageTotal = 3;
   const sanBefore = state().san;
@@ -671,11 +692,15 @@ async function scenario_spellFail() {
   documentStub.querySelector('#mp-range').value = '5';
   DD.checkQueue = [{ passed: false, level: 'fail', roll: 97 }];
   await click('诵读咒文');
+  await tick(40);
+  assert(entryNo() === '198', '应到198施法条目');
+  await click('「号令群星」施法检定');
   await tick(60);
   assert(entryNo() === '65', '施法失败应到65，当前 ' + entryNo());
   DD.damageTotal = 2;
   DD.checkQueue = [{ passed: true, level: 'success', roll: 20 }];
   await clickRoll();
+  await click('「力量」检定');
   await tick(80);
   assert(entryNo() === '93', '力量成功应到93，当前 ' + entryNo());
   await clickRoll();
@@ -702,6 +727,7 @@ async function scenario_morningFlags() {
   assert(opts.some(t => t.includes('脚印')), '夜游后应可勘查脚印');
   DD.checkQueue = [{ passed: true, level: 'success', roll: 20 }];
   await click('循着昨夜的脚印找过去');
+  await click('「侦查」检定');
   await tick(80);
   assert(entryNo() === '112', '侦查成功应发现阶梯，当前 ' + entryNo());
   assert(state().flags.ladder === true, '应获得阶梯秘密');
@@ -754,6 +780,7 @@ async function scenario_endings() {
   DD.checkQueue = [{ passed: true, level: 'success', roll: 30 }];
   await click('研读《阿撒托斯及其他》');
   assert(entryNo() === '171', '171');
+  await click('「理智」检定');
   await tick(150);
   assert(state().mythos >= 4, '神话应+4');
   assert(documentStub.querySelector('#screen-ending').classList.contains('active'), '诗集结局屏');

@@ -415,6 +415,7 @@ body.still .dice-overlay .dice-box { opacity: 1 !important; transform: none !imp
 .choice-btn.dim { color: var(--ink-faint); font-size: 14px; }
 .choice-btn.dim:hover { color: var(--ink-dim); }
 .choice-btn.hot { border-left-color: var(--ember); }
+.choice-btn.check::before { content: '⚄'; color: var(--ember); font-size: 14px; }
 .choice-btn.secret {
   border-style: dashed;
   border-color: rgba(212, 169, 78, .55);

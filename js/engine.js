@@ -684,14 +684,30 @@
     return check.label || ('「' + check.stat + '」检定');
   }
 
+  const DIFF_CN = { hard: '困难', extreme: '极难' };
+
+  function checkTarget(check) {
+    let v = statValue(check.stat);
+    if (check.doubled) v = v * 2;
+    return v;
+  }
+
+  function checkSub(check) {
+    const parts = ['目标 ' + checkTarget(check)];
+    const d = check.diff || 'normal';
+    if (d !== 'normal') parts.push(DIFF_CN[d] + '难度');
+    const b = netBonus(check);
+    if (b === 1) parts.push('奖励骰');
+    if (b === -1) parts.push('惩罚骰');
+    return parts.join(' · ');
+  }
+
   async function performCheck(check) {
-    let value = statValue(check.stat);
-    if (check.doubled) value = value * 2;
     const diffName = check.diff === 'hard' ? '（困难）' : check.diff === 'extreme' ? '（极难）' : '';
     const r = await DiceUI.check({
       statLabel: '「' + check.stat + '」',
       title: checkLabel(check) + diffName,
-      value: value,
+      value: checkTarget(check),
       diff: check.diff || 'normal',
       bonus: netBonus(check),
       fumbleAt96: !!check.fumbleAt96
@@ -700,11 +716,12 @@
     return r;
   }
 
+  /* 展示检定按钮：先读完正文，由玩家主动掷骰 */
   function handleCheck(st, check) {
     // 可选检定：先给出按钮
     if (check.optional) {
       const area = $('#choices');
-      const b1 = mkBtn(checkLabel(check) + '　<span class="btn-sub">' + statValue(check.stat) + '</span>', async () => {
+      const b1 = mkBtn(checkLabel(check) + '　<span class="btn-sub">' + checkSub(check) + '</span>', async () => {
         area.innerHTML = '';
         const r = await performCheck(check);
         if (r.passed && check.succFx) await applyFxQueue(check.succFx);
@@ -718,6 +735,15 @@
     // 已死者直接走向失败分支（重伤濒死）
     if (check.failIfDead && st.hp <= 0) { goTo(check.fail); return; }
 
+    const area = $('#choices');
+    area.appendChild(mkBtn(
+      '掷骰 · ' + checkLabel(check) + '　<span class="btn-sub">' + checkSub(check) + '</span>',
+      () => { area.innerHTML = ''; resolveCheck(check); },
+      'hot check'
+    ));
+  }
+
+  function resolveCheck(check) {
     (async () => {
       const r = await performCheck(check);
       if (r.passed) {
@@ -785,7 +811,7 @@
       if (e.hub === 'day3' && c.key && state.tried[c.key]) return;
 
       const btn = mkBtn(
-        fmt(c.t) + (c.st && c.secret ? ' <span class="btn-sub">✦</span>' : ''),
+        fmt(c.t) + (c.check ? ' <span class="btn-sub">' + checkSub(c.check) + '</span>' : '') + (c.st && c.secret ? ' <span class="btn-sub">✦</span>' : ''),
         async () => {
           if (c.key) { state.tried[c.key] = true; save(); }
           if (c.fx) await applyFxQueue(c.fx);
@@ -1176,24 +1202,32 @@
 
     /* 150：追逐怪人 */
     async chaseMan(st, e) {
-      const r = await DiceUI.opposed({
-        title: '追逐 · 对抗检定',
-        a: { label: '你', value: st.attrs.DEX },
-        b: { label: '怪男人', value: 38 },
-        aggressor: 'a'
-      });
-      goTo(r.winner === 0 ? 172 : 87);
+      const area = $('#choices');
+      area.appendChild(mkBtn('掷骰 · 「敏捷」对抗检定　<span class="btn-sub">追逐怪男人 · 对方 38</span>', async () => {
+        area.innerHTML = '';
+        const r = await DiceUI.opposed({
+          title: '追逐 · 对抗检定',
+          a: { label: '你', value: st.attrs.DEX },
+          b: { label: '怪男人', value: 38 },
+          aggressor: 'a'
+        });
+        goTo(r.winner === 0 ? 172 : 87);
+      }, 'hot check'));
     },
 
     /* 155：逃离熊 */
     async fleeBear(st, e) {
-      const r = await DiceUI.opposed({
-        title: '逃离黑熊 · 对抗检定',
-        a: { label: '你', value: st.attrs.DEX },
-        b: { label: '黑熊', value: 58 },
-        aggressor: 'a'
-      });
-      goTo(r.winner === 0 ? 161 : 167);
+      const area = $('#choices');
+      area.appendChild(mkBtn('掷骰 · 「敏捷」对抗检定　<span class="btn-sub">逃离黑熊 · 对方 58</span>', async () => {
+        area.innerHTML = '';
+        const r = await DiceUI.opposed({
+          title: '逃离黑熊 · 对抗检定',
+          a: { label: '你', value: st.attrs.DEX },
+          b: { label: '黑熊', value: 58 },
+          aggressor: 'a'
+        });
+        goTo(r.winner === 0 ? 161 : 167);
+      }, 'hot check'));
     },
 
     /* 40：火刑架上的法术选择 */
@@ -1244,7 +1278,9 @@
     /* 198：施法检定 */
     starSpell(st, e) {
       const target = st.lastSpend * 10;
-      (async () => {
+      const area = $('#choices');
+      area.appendChild(mkBtn('掷骰 · 「号令群星」施法检定　<span class="btn-sub">成功率 ' + target + '%（96~100 必然失败）</span>', async () => {
+        area.innerHTML = '';
         const r = await DiceUI.check({
           statLabel: '法术',
           title: '「号令群星」施法检定',
@@ -1255,7 +1291,7 @@
           fumbleAt96: true
         });
         goTo(r.passed ? 209 : 65);
-      })();
+      }, 'hot check'));
     },
 
     /* 167：被熊袭击 */
@@ -1270,7 +1306,9 @@
 
     /* 171：诗集结局 */
     bookEnding(st, e) {
-      (async () => {
+      const area = $('#choices');
+      area.appendChild(mkBtn('掷骰 · 「理智」检定　<span class="btn-sub">研读诗集 · 目标 ' + state.san + '</span>', async () => {
+        area.innerHTML = '';
         const r = await performCheck({ stat: '理智', label: '「理智」检定（研读诗集）' });
         if (r.passed) { applySanDelta(-1); }
         else {
@@ -1284,7 +1322,7 @@
           t: e.t.concat(['你将再也难以轻松入眠。']),
           ending: { type: 'mythos', epitaph: '研读《阿撒托斯及其他》——你叩响了禁忌之门。' }
         });
-      })();
+      }, 'hot check'));
     }
   };
 
